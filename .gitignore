@@ -1,0 +1,25 @@
+# Dependências de Pacotes / Ambientes Virtuais
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.env
+
+# Arquivos compilados por Python e Caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Ferramentas IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Banco de dados gerado e caches temporários da engine
+amazon_offers_history.db
+cheapest_offers.json
+debug_amazon.html

@@ -31,7 +31,7 @@ class FindCheapestVariantsUseCase:
                 continue
 
             # Busca a qual Modelo Base de Mercado ele pertence (Mapeamento de Acessórios, Consoles, Controles)
-            variant_name = ProductDomainService.normalize_product_variant(p.title, p.category)
+            variant_name = p.variant_name if getattr(p, 'variant_name', '') else ProductDomainService.normalize_product_variant(p.title, p.category)
             
             variant_dto = PriceVariant(
                 base_model=variant_name,

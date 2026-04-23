@@ -10,7 +10,13 @@ class ProductDomainService:
         t = title.lower()
         
         if category == "Consoles":
-            if "pro" in t:
+            if "xbox series s" in t:
+                return "Console Xbox Series S"
+            elif "xbox series x" in t:
+                return "Console Xbox Series X"
+            elif "xbox one" in t or "xbox" in t:
+                return "Console Xbox One"
+            elif "pro" in t:
                 return "Console PlayStation 5 PRO"
             elif "slim" in t:
                 if "digital" in t or "edição digital" in t or "disk" not in t and "disco" not in t:
@@ -27,6 +33,10 @@ class ProductDomainService:
                 return "Controle DualSense Edge (Pro)"
             elif "hori" in t or "luta" in t:
                 return "Controle Fightpad Hori ALPHA"
+            elif "elite" in t:
+                return "Controle Xbox Elite Series 2"
+            elif ("xbox" in t) and ("dualsense" not in t):
+                return "Controle Sem Fio Xbox Padrão"
             elif "dualsense" in t or "controle" in t:
                 return "Controle DualSense Padrão"
             else:
@@ -47,6 +57,8 @@ class ProductDomainService:
                 return "Headset Logitech G PRO X 2"
             elif "g435" in t:
                 return "Headset Logitech G435"
+            elif "xbox" in t:
+                return "Headset Sem Fio Xbox"
             else:
                 return "Headset/Fones Diversos"
 
@@ -84,6 +96,14 @@ class ProductDomainService:
                 return "Jogo: Mega Man Collection"
             elif "ea sports" in t or "fc" in t:
                 return "Jogo: EA Sports FC"
+            elif "forza" in t:
+                return "Jogo: Forza Horizon 5"
+            elif "halo " in t:
+                return "Jogo: Halo Infinite"
+            elif "grand theft auto" in t or "gta" in t:
+                return "Jogo: Grand Theft Auto V (GTA 5)"
+            elif "hogwarts" in t or "legacy" in t:
+                return "Jogo: Hogwarts Legacy"
             else:
                 return "Jogo Genérico"
                 

@@ -1,5 +1,5 @@
 import json
-import requests
+from curl_cffi import requests
 from parsel import Selector
 import time
 import random
@@ -8,9 +8,9 @@ import re
 
 OUTPUT_JSON = "amazon_products_local.json"
 
-def scrape_amazon_search(search_url):
+def scrape_amazon_search(search_urls):
     """
-    Função 1: Raspa a página de busca para obter a listagem de produtos.
+    Função 1: Raspa páginas de busca para obter a listagem de produtos.
     """
     product_data = []
     
@@ -22,79 +22,83 @@ def scrape_amazon_search(search_url):
         'Referer': 'https://www.google.com/'
     }
 
-    print(f"Buscando produtos na página: {search_url}")
-    try:
-        time.sleep(random.uniform(1.0, 2.5))
-        response = requests.get(search_url, headers=headers)
-        
-        if response.status_code == 503:
-            print(f"⚠️  Bloqueado pela Amazon (Erro 503 / CAPTCHA)")
-            return
+    for search_url in search_urls:
+        print(f"Buscando produtos na página: {search_url}")
+        try:
+            print("⏳ Aguardando alguns segundos (4 a 7s) para não ser bloqueado pela Amazon...")
+            time.sleep(random.uniform(4.0, 7.0))
+            # Utilizando curl_cffi impersonando navegadores reais
+            response = requests.get(search_url, headers=headers, impersonate="chrome")
             
-        response.raise_for_status()
+            if response.status_code == 503:
+                print(f"⚠️  Bloqueado pela Amazon (Erro 503 / CAPTCHA)")
+                continue
+                
+            response.raise_for_status()
 
-        selector = Selector(text=response.text)
-        search_results = selector.css('[data-component-type="s-search-result"]')
-        print(f"Encontrados {len(search_results)} resultados na página. Processando...")
-        
-        for item in search_results:
-            title = item.css('[data-cy="title-recipe"] h2 span::text').get()
-            if not title:
-                title = item.css('h2 span::text').get()
-                
-            price = item.css('[data-cy="price-recipe"] span.a-price span.a-offscreen::text').get()
-            if not price:
-                price = item.css('span.a-price span.a-offscreen::text').get()
-                
-            link = item.css('[data-cy="title-recipe"] a::attr(href)').get()
-            if not link:
-                link = item.css('h2 a::attr(href)').get()
+            selector = Selector(text=response.text)
+            search_results = selector.css('[data-component-type="s-search-result"]')
+            print(f"Encontrados {len(search_results)} resultados na página. Processando...")
+            
+            for item in search_results:
+                title = item.css('[data-cy="title-recipe"] h2 span::text').get()
+                if not title:
+                    title = item.css('h2 span::text').get()
+                    
+                price = item.css('[data-cy="price-recipe"] span.a-price span.a-offscreen::text').get()
+                if not price:
+                    price = item.css('span.a-price span.a-offscreen::text').get()
+                    
+                link = item.css('[data-cy="title-recipe"] a::attr(href)').get()
                 if not link:
-                    a_tag = item.css('h2').xpath('..')
-                    if a_tag and a_tag[0].root.tag == 'a':
-                        link = a_tag[0].attrib.get('href')
+                    link = item.css('h2 a::attr(href)').get()
+                    if not link:
+                        a_tag = item.css('h2').xpath('..')
+                        if a_tag and a_tag[0].root.tag == 'a':
+                            link = a_tag[0].attrib.get('href')
 
-            rating = item.css('span.a-icon-alt::text').get()
-            sku = item.attrib.get('data-asin')
-            
-            # Novos campos da vitrine
-            image_url = item.css('img.s-image::attr(src)').get()
-            review_count = item.css('span.a-size-base.s-underline-text::text').get()
-            original_price = item.css('span.a-price.a-text-price span.a-offscreen::text').get()
-            sponsored = "Sim" if item.css('.puis-sponsored-label-text, .puis-sponsored-label-info-icon').get() else "Não"
-            is_prime = "Sim" if item.css('i.a-icon-prime').get() else "Não"
-            sales_info = item.xpath('.//span[contains(text(), "comprados")]/text()').get()
-            
-            # Tenta compor dados de entrega de vários spans disponíveis
-            delivery = item.css('[data-cy="delivery-recipe"] span.a-text-bold::text').getall()
-            delivery_msg = " | ".join([d.strip() for d in delivery if d.strip()])
-            
-            if not link or "javascript" in link or len(link) < 5:
-                link = f"/dp/{sku}"
+                rating = item.css('span.a-icon-alt::text').get()
+                sku = item.attrib.get('data-asin')
                 
-            if link and not link.startswith('http'):
-                link = "https://www.amazon.com.br" + link
+                # Novos campos da vitrine
+                image_url = item.css('img.s-image::attr(src)').get()
+                review_count = item.css('span.a-size-base.s-underline-text::text').get()
+                original_price = item.css('span.a-price.a-text-price span.a-offscreen::text').get()
+                sponsored = "Sim" if item.css('.puis-sponsored-label-text, .puis-sponsored-label-info-icon').get() else "Não"
+                is_prime = "Sim" if item.css('i.a-icon-prime').get() else "Não"
+                sales_info = item.xpath('.//span[contains(text(), "comprados")]/text()').get()
                 
-            if title:
-                produto = {
-                    "sku_amazon": sku,
-                    "title": title.strip(),
-                    "price_current": price.strip() if price else "Sem preço",
-                    "price_original": original_price.strip() if original_price else "Sem desconto",
-                    "rating": rating.strip() if rating else "Sem avaliação",
-                    "reviews_count": review_count.strip() if review_count else "0",
-                    "sales_info": sales_info.strip() if sales_info else "-",
-                    "sponsored": sponsored,
-                    "is_prime": is_prime,
-                    "delivery": delivery_msg if delivery_msg else "-",
-                    "image": image_url,
-                    "url": link
-                }
-                product_data.append(produto)
+                # Tenta compor dados de entrega de vários spans disponíveis
+                delivery = item.css('[data-cy="delivery-recipe"] span.a-text-bold::text').getall()
+                delivery_msg = " | ".join([d.strip() for d in delivery if d.strip()])
                 
-    except Exception as e:
-        print(f"Erro ao extrair a página de busca: {e}")
+                if not link or "javascript" in link or len(link) < 5:
+                    link = f"/dp/{sku}"
+                    
+                if link and not link.startswith('http'):
+                    link = "https://www.amazon.com.br" + link
+                    
+                if title:
+                    produto = {
+                        "sku_amazon": sku,
+                        "title": title.strip(),
+                        "price_current": price.strip() if price else "Sem preço",
+                        "price_original": original_price.strip() if original_price else "Sem desconto",
+                        "rating": rating.strip() if rating else "Sem avaliação",
+                        "reviews_count": review_count.strip() if review_count else "0",
+                        "sales_info": sales_info.strip() if sales_info else "-",
+                        "sponsored": sponsored,
+                        "is_prime": is_prime,
+                        "delivery": delivery_msg if delivery_msg else "-",
+                        "image": image_url,
+                        "url": link
+                    }
+                    product_data.append(produto)
+                    
+        except Exception as e:
+            print(f"Erro ao extrair a página de busca: {e}")
 
+    # Salva todos os produtos acumulados
     with open(OUTPUT_JSON, 'w', encoding='utf-8') as f:
         json.dump(product_data, f, ensure_ascii=False, indent=4)
         
@@ -142,9 +146,9 @@ def enrich_with_manufacturer_sku(limit=3):
         
         try:
             # Pausa humana crucial entre cada produto
-            time.sleep(random.uniform(2.5, 5.0))
+            time.sleep(random.uniform(3.5, 6.0))
             
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, impersonate="chrome")
             
             if response.status_code == 503:
                 print("⚠️ Bloqueado por CAPTCHA da Amazon. Parando execução para proteger seu IP.")
@@ -192,9 +196,13 @@ def enrich_with_manufacturer_sku(limit=3):
         print("\nTodos os produtos do JSON já estão enriquecidos ou limite foi atingido.")
 
 if __name__ == "__main__":
-    termo_de_busca = "https://www.amazon.com.br/s?k=playstation+5"
+    termos_de_busca = [
+        "https://www.amazon.com.br/s?k=playstation+5",
+        "https://www.amazon.com.br/s?k=xbox+series",
+        "https://www.amazon.com.br/s?k=xbox+series+x"
+    ]
     print("Iniciando varredura da vitrine com todas as propriedades estendidas...")
-    scrape_amazon_search(termo_de_busca)
+    scrape_amazon_search(termos_de_busca)
     
     # Executa apenas nos próximos 3 produtos da lista que NÃO tem o 'manufacturer_sku'
     # enrich_with_manufacturer_sku(limit=3)

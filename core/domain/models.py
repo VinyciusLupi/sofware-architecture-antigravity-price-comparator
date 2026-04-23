@@ -7,6 +7,8 @@ class Product:
     price_text: str
     category: str  # Extraído grosseiramente, a lógica de categoria pode ser processada antes ou aqui
     image_url: str = ""
+    variant_name: str = ""
+    csv_ref_hash: str = ""
 
 @dataclass
 class PriceVariant:

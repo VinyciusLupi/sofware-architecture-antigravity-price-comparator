@@ -39,10 +39,10 @@ def classify_products(input_file="amazon_products_local.json", output_file="amaz
         elif any(x in title for x in ["controle", "dualsense", "controller", "mando", "joystick"]):
             category = "Controles"
             
-        elif any(x in title for x in ["jogo", "spider-man", "gran turismo", "ghost of", "resident evil", "pragmata", "mega man", "collection", "game"]):
+        elif any(x in title for x in ["jogo", "spider-man", "gran turismo", "ghost of", "resident evil", "pragmata", "mega man", "collection", "game", "grand theft auto", "gta", "hogwarts", "legacy"]):
             category = "Jogos"
             
-        elif any(x in title for x in ["playstation 5", "playstation®5", "ps5", "pro", "macbook", "notebook"]):
+        elif any(x in title for x in ["playstation 5", "playstation®5", "ps5", "pro", "macbook", "notebook", "xbox one", "xbox series", "xbox"]):
             # Como a busca principal original do usuário inclui o console ou macbooks...
             category = "Consoles"
             
